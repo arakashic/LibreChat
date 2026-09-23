@@ -108,6 +108,8 @@ export interface AppConfig {
   secureImageLinks?: TCustomConfig['secureImageLinks'];
   /** Processed model specifications */
   modelSpecs?: TCustomConfig['modelSpecs'];
+  /** Server-side model lifecycle manager configuration */
+  modelManager?: TCustomConfig['modelManager'];
   /** Available tools */
   availableTools?: Record<string, FunctionTool>;
   endpoints?: {

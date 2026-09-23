@@ -1048,6 +1048,16 @@ endpoints:
   #     # - "disabled": No trace information (default)
   #     # Trace output is logged to application log files for compliance auditing
   #     trace: "enabled"
+# Optional lifecycle manager for locally hosted models. The browser receives
+# only enabled/poll/capability flags; baseURL and apiKey remain server-side.
+# modelManager:
+#   baseURL: "${MODEL_MANAGER_BASE_URL}" # e.g. http://model-manager:8002/api/v1
+#   apiKey: "${MODEL_MANAGER_API_KEY}"
+#   pollIntervalMs: 2000
+#   requestTimeoutMs: 10000
+#   activationRoles:
+#     - "ADMIN"
+
 # Example modelSpecs configuration showing grouping options
 # The 'group' field organizes model specs in the UI selector:
 # - If 'group' matches an endpoint name (e.g., "openAI", "groq"), the spec appears nested under that endpoint
@@ -1085,6 +1095,7 @@ endpoints:
 #     - name: "llama3-70b-8192"
 #       label: "Llama 3 70B"
 #       description: "Fastest inference available - great for quick responses"
+#       lifecycle: true  # Require modelManager readiness before selection
 #       group: "groq"  # String value matching your custom endpoint name from endpoints.custom
 #       preset:
 #         endpoint: "groq"

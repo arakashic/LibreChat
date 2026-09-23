@@ -20,6 +20,7 @@ export * from './parsers';
 /* custom/dynamic configurations  */
 export * from './generate';
 export * from './models';
+export * from './manager';
 /* mcp */
 export * from './mcp';
 /* RBAC */

@@ -51,6 +51,8 @@ export type TModelSpec = {
   authType?: AuthType;
   /** Hide the chat input tool badge row while this model spec is active. */
   hideBadgeRow?: boolean;
+  /** Require the configured model manager to report this spec's model ready before selection. */
+  lifecycle?: boolean;
   webSearch?: boolean;
   fileSearch?: boolean;
   executeCode?: boolean;
@@ -194,6 +196,7 @@ export const tModelSpecSchema = z.object({
   iconURL: z.union([z.string(), eModelEndpointSchema]).optional(),
   authType: authTypeSchema.optional(),
   hideBadgeRow: z.boolean().optional(),
+  lifecycle: z.boolean().optional(),
   webSearch: z.boolean().optional(),
   fileSearch: z.boolean().optional(),
   executeCode: z.boolean().optional(),

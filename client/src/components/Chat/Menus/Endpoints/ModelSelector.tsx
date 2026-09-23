@@ -12,7 +12,9 @@ import { ModelSelectorProvider, useModelSelectorContext } from './ModelSelectorC
 import { useShortcutAriaKey, useShortcutHint } from '~/hooks/useKeyboardShortcuts';
 import { ModelSelectorChatProvider } from './ModelSelectorChatContext';
 import { getSelectedIcon, getDisplayValue } from './utils';
+import ModelStatus from './components/ModelStatus';
 import { CustomMenu as Menu } from './CustomMenu';
+import LifecycleDialog from './LifecycleDialog';
 import DialogManager from './DialogManager';
 import { useLocalize } from '~/hooks';
 
@@ -36,6 +38,8 @@ function ModelSelectorContent() {
     // Functions
     setSearchValue,
     setSelectedValues,
+    getModelStatus,
+    managerStatusLoading,
     // Dialog
     keyDialogOpen,
     onOpenChange,
@@ -64,6 +68,10 @@ function ModelSelectorContent() {
       }),
     [localize, agentsMap, modelSpecs, selectedValues, mappedEndpoints],
   );
+  const selectedSpec = useMemo(
+    () => modelSpecs.find((spec) => spec.name === selectedValues.modelSpec),
+    [modelSpecs, selectedValues.modelSpec],
+  );
 
   const trigger = (
     <TooltipAnchor
@@ -82,6 +90,12 @@ function ModelSelectorContent() {
             </div>
           )}
           <span className="truncate text-left">{selectedDisplayValue}</span>
+          {selectedSpec?.lifecycle === true && (
+            <ModelStatus
+              status={getModelStatus(selectedSpec.preset.model)}
+              checking={managerStatusLoading}
+            />
+          )}
         </button>
       }
     />
@@ -125,6 +139,7 @@ function ModelSelectorContent() {
         endpointsConfig={endpointsConfig || {}}
         keyDialogEndpoint={keyDialogEndpoint || undefined}
       />
+      <LifecycleDialog />
     </div>
   );
 }

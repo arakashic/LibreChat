@@ -43,8 +43,11 @@ jest.mock('~/hooks', () => ({
     toggleFavoriteModel: mockToggleFavoriteModel,
     isFavoriteAgent: () => false,
     toggleFavoriteAgent: mockToggleFavoriteAgent,
+    isFavoriteSpec: () => false,
+    toggleFavoriteSpec: jest.fn(),
   }),
   useLocalize: () => (key: string) => key,
+  useIsActiveItem: () => ({ ref: { current: null }, isActive: false }),
 }));
 
 jest.mock('~/components/Chat/Menus/Endpoints/useActiveItem', () => ({

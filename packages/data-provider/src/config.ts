@@ -39,6 +39,8 @@ import { isActionTool } from './types/tools';
 import { apiBaseUrl } from './api-endpoints';
 import { FileSources } from './types/files';
 import { MCPServersSchema } from './mcp';
+import { modelManagerConfigSchema } from './manager';
+import type { TModelManagerStartup } from './manager';
 export {
   MAX_SUBAGENTS,
   MAX_SUBAGENTS_CEILING,
@@ -59,7 +61,7 @@ export const DEFAULT_OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 export const BASE_ONLY_CONFIG_SECTIONS = ['filters'] as const;
 /** Sections that may be stored in the tenant's base config document but must
  * not be overridden or tombstoned by role, group, or user config documents. */
-export const BASE_PRINCIPAL_CONFIG_SECTIONS = ['langfuse'] as const;
+export const BASE_PRINCIPAL_CONFIG_SECTIONS = ['langfuse', 'modelManager'] as const;
 
 export const defaultRetrievalModels = [
   'gpt-4o',
@@ -2398,6 +2400,7 @@ export type TStartupConfig = {
   adminPanelURL?: string;
   customFooter?: string;
   modelSpecs?: TSpecsConfig;
+  modelManager?: TModelManagerStartup;
   modelDescriptions?: Record<string, Record<string, string>>;
   sharedLinksEnabled: boolean;
   publicSharedLinksEnabled: boolean;
@@ -2960,6 +2963,7 @@ export const configSchema = z.object({
   cache: z.boolean().default(true),
   ocr: ocrSchema.optional(),
   webSearch: webSearchSchema.optional(),
+  modelManager: modelManagerConfigSchema.optional(),
   langfuse: langfuseConfigSchema.optional(),
   memory: memorySchema.optional(),
   summarization: summarizationConfigSchema.optional(),

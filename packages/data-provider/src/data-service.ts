@@ -7,6 +7,7 @@ import type {
   TTraceRecordDetail,
 } from './types/traces';
 import type { TInsightsAccessResponse, TInsightsParams, TInsightsResponse } from './types/insights';
+import type { TModelManagerStatus, TModelOperationResponse } from './manager';
 import type { TFileConfig } from './file-config';
 import type * as tl from './types/tools';
 import type * as t from './types';
@@ -403,6 +404,18 @@ export const getTokenConfig = (): Promise<t.TTokenConfigMap> => {
 
 export const getModels = async (): Promise<t.TModelsConfig> => {
   return request.get(endpoints.models());
+};
+
+export const getManagedModels = (): Promise<TModelManagerStatus> => {
+  return request.get(endpoints.modelManager());
+};
+
+export const activateManagedModel = (modelId: string): Promise<TModelOperationResponse> => {
+  return request.post(endpoints.activateManagedModel(modelId));
+};
+
+export const cancelModelOperation = (operationId: string): Promise<TModelOperationResponse> => {
+  return request.post(endpoints.cancelModelOperation(operationId));
 };
 
 /* Assistants */

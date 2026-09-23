@@ -455,6 +455,37 @@ describe('GET /api/config', () => {
       expect(response.body.interface).toEqual(baseAppConfig.interfaceConfig);
     });
 
+    it('exposes model manager availability without server credentials', async () => {
+      mockGetAppConfig.mockResolvedValue({
+        ...baseAppConfig,
+        modelManager: {
+          baseURL: 'http://model-manager.internal/api/v1',
+          apiKey: 'private-token',
+          pollIntervalMs: 2500,
+          requestTimeoutMs: 10000,
+          activationRoles: ['ADMIN'],
+        },
+      });
+
+      const userResponse = await request(createApp(mockUser)).get('/api/config');
+      const adminResponse = await request(createApp({ ...mockUser, role: 'ADMIN' })).get(
+        '/api/config',
+      );
+
+      expect(userResponse.body.modelManager).toEqual({
+        enabled: true,
+        pollIntervalMs: 2500,
+        canActivate: false,
+      });
+      expect(adminResponse.body.modelManager).toEqual({
+        enabled: true,
+        pollIntervalMs: 2500,
+        canActivate: true,
+      });
+      expect(JSON.stringify(adminResponse.body)).not.toContain('private-token');
+      expect(JSON.stringify(adminResponse.body)).not.toContain('model-manager.internal');
+    });
+
     it('should include authenticated-only env var fields', async () => {
       mockGetAppConfig.mockResolvedValue(baseAppConfig);
       process.env.SANDPACK_BUNDLER_URL = 'https://bundler.test';

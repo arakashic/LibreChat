@@ -17,6 +17,7 @@ export enum QueryKeys {
   user = 'user',
   name = 'name', // user key name
   models = 'models',
+  modelManager = 'modelManager',
   balance = 'balance',
   endpoints = 'endpoints',
   tokenConfig = 'tokenConfig',
@@ -111,6 +112,8 @@ export const DynamicQueryKeys = {
 } as const;
 
 export enum MutationKeys {
+  activateManagedModel = 'activateManagedModel',
+  cancelModelOperation = 'cancelModelOperation',
   subagentControl = 'subagentControl',
   enqueueAgentQueuedTurn = 'enqueueAgentQueuedTurn',
   cancelAgentQueuedTurn = 'cancelAgentQueuedTurn',

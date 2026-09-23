@@ -66,6 +66,7 @@ export * from './imports';
 export * from './memory';
 /* Model Specs */
 export * from './modelSpecs';
+export * from './manager';
 /* Agents */
 export * from './agents';
 /* Assistants */

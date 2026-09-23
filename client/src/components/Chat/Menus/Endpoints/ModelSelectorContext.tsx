@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react';
 import debounce from 'lodash/debounce';
 import {
   EModelEndpoint,
@@ -6,8 +6,16 @@ import {
   isAgentsEndpoint,
   isAssistantsEndpoint,
 } from 'librechat-data-provider';
+import type { TManagedModelStatus } from 'librechat-data-provider';
 import type * as t from 'librechat-data-provider';
 import type { Endpoint, SelectedValues } from '~/common';
+import {
+  useGetEndpointsQuery,
+  useListAgentsQuery,
+  useModelManagerQuery,
+  useActivateManagedModelMutation,
+  useCancelModelOperationMutation,
+} from '~/data-provider';
 import {
   useAgentDefaultPermissionLevel,
   useSelectorEffects,
@@ -16,7 +24,6 @@ import {
   useLocalize,
 } from '~/hooks';
 import { useAgentsMapContext, useAssistantsMapContext, useLiveAnnouncer } from '~/Providers';
-import { useGetEndpointsQuery, useListAgentsQuery } from '~/data-provider';
 import { useModelSelectorChatContext } from './ModelSelectorChatContext';
 import useSelectMention from '~/hooks/Input/useSelectMention';
 import { filterItems } from './utils';
@@ -42,6 +49,17 @@ type ModelSelectorContextType = {
   handleSelectSpec: (spec: t.TModelSpec) => void;
   handleSelectEndpoint: (endpoint: Endpoint) => void;
   handleSelectModel: (endpoint: Endpoint, model: string) => void;
+  getModelStatus: (modelId?: string | null) => TManagedModelStatus | undefined;
+  pendingSpec: t.TModelSpec | null;
+  lifecycleDialogOpen: boolean;
+  setLifecycleDialogOpen: (open: boolean) => void;
+  confirmActivation: () => void;
+  cancelActivation: () => void;
+  activationPending: boolean;
+  activationError: string | null;
+  managerStatusLoading: boolean;
+  managerStatusError: boolean;
+  canActivateModel: boolean;
 } & ReturnType<typeof useKeyDialog>;
 
 const ModelSelectorContext = createContext<ModelSelectorContextType | undefined>(undefined);
@@ -143,6 +161,26 @@ export function ModelSelectorProvider({ children, startupConfig }: ModelSelector
     returnHandlers: true,
   });
 
+  const managerQuery = useModelManagerQuery(startupConfig?.modelManager);
+  const activateModel = useActivateManagedModelMutation();
+  const cancelOperation = useCancelModelOperationMutation();
+  const managedModels = useMemo(() => {
+    const models = new Map<string, TManagedModelStatus>();
+    for (const pool of managerQuery.data?.pools ?? []) {
+      for (const managedModel of pool.models) {
+        models.set(managedModel.id, managedModel);
+      }
+    }
+    return models;
+  }, [managerQuery.data]);
+  const getModelStatus = useCallback(
+    (modelId?: string | null) => (modelId ? managedModels.get(modelId) : undefined),
+    [managedModels],
+  );
+  const [pendingSpec, setPendingSpec] = useState<t.TModelSpec | null>(null);
+  const [lifecycleDialogOpen, setLifecycleDialogOpenState] = useState(false);
+  const [activationError, setActivationError] = useState<string | null>(null);
+
   // State
   const [selectedValues, setSelectedValues] = useState<SelectedValues>(() => {
     let initialModel = model || '';
@@ -200,7 +238,7 @@ export function ModelSelectorProvider({ children, startupConfig }: ModelSelector
     }));
   }, []);
 
-  const handleSelectSpec = useCallback(
+  const selectSpec = useCallback(
     (spec: t.TModelSpec) => {
       let model = spec.preset.model ?? null;
       onSelectSpec?.(spec);
@@ -219,6 +257,65 @@ export function ModelSelectorProvider({ children, startupConfig }: ModelSelector
     },
     [onSelectSpec],
   );
+
+  const setLifecycleDialogOpen = useCallback((open: boolean) => {
+    setLifecycleDialogOpenState(open);
+    if (!open) {
+      setPendingSpec(null);
+      setActivationError(null);
+    }
+  }, []);
+
+  const handleSelectSpec = useCallback(
+    (spec: t.TModelSpec) => {
+      if (spec.lifecycle !== true) {
+        selectSpec(spec);
+        return;
+      }
+      const status = getModelStatus(spec.preset.model);
+      if (status?.state === 'ready') {
+        selectSpec(spec);
+        return;
+      }
+      setPendingSpec(spec);
+      setActivationError(null);
+      setLifecycleDialogOpenState(true);
+    },
+    [getModelStatus, selectSpec],
+  );
+
+  const confirmActivation = useCallback(() => {
+    const modelId = pendingSpec?.preset.model;
+    if (!modelId) {
+      return;
+    }
+    setActivationError(null);
+    activateModel.mutate(modelId, {
+      onError: (error) => setActivationError(error.message),
+    });
+  }, [activateModel, pendingSpec]);
+
+  const cancelActivation = useCallback(() => {
+    const operationId = getModelStatus(pendingSpec?.preset.model)?.operation?.id;
+    if (!operationId) {
+      return;
+    }
+    setActivationError(null);
+    cancelOperation.mutate(operationId, {
+      onError: (error) => setActivationError(error.message),
+    });
+  }, [cancelOperation, getModelStatus, pendingSpec]);
+
+  useEffect(() => {
+    if (!lifecycleDialogOpen || pendingSpec == null) {
+      return;
+    }
+    if (getModelStatus(pendingSpec.preset.model)?.state !== 'ready') {
+      return;
+    }
+    selectSpec(pendingSpec);
+    setLifecycleDialogOpen(false);
+  }, [getModelStatus, lifecycleDialogOpen, pendingSpec, selectSpec, setLifecycleDialogOpen]);
 
   const handleSelectEndpoint = useCallback(
     (endpoint: Endpoint) => {
@@ -276,6 +373,18 @@ export function ModelSelectorProvider({ children, startupConfig }: ModelSelector
       mappedEndpoints,
       endpointsConfig,
       handleSelectSpec,
+      getModelStatus,
+      pendingSpec,
+      lifecycleDialogOpen,
+      setLifecycleDialogOpen,
+      confirmActivation,
+      cancelActivation,
+      activationPending: activateModel.isLoading || cancelOperation.isLoading,
+      activationError,
+      managerStatusLoading: managerQuery.isLoading,
+      managerStatusError: managerQuery.isError,
+      canActivateModel:
+        managerQuery.data?.can_activate ?? startupConfig?.modelManager?.canActivate ?? false,
       handleSelectModel,
       setSelectedValues,
       handleSelectEndpoint,
@@ -295,6 +404,19 @@ export function ModelSelectorProvider({ children, startupConfig }: ModelSelector
       mappedEndpoints,
       endpointsConfig,
       handleSelectSpec,
+      getModelStatus,
+      pendingSpec,
+      lifecycleDialogOpen,
+      setLifecycleDialogOpen,
+      confirmActivation,
+      cancelActivation,
+      activateModel.isLoading,
+      cancelOperation.isLoading,
+      activationError,
+      managerQuery.isLoading,
+      managerQuery.isError,
+      managerQuery.data?.can_activate,
+      startupConfig?.modelManager?.canActivate,
       handleSelectModel,
       setSelectedValues,
       handleSelectEndpoint,

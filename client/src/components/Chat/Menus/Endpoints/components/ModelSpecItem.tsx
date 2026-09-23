@@ -9,6 +9,7 @@ import { useModelSelectorContext } from '../ModelSelectorContext';
 import { CustomMenuItem as MenuItem } from '../CustomMenu';
 import { cn, getSpecAgentAvatarURL } from '~/utils';
 import SpecDescription from './SpecDescription';
+import ModelStatus from './ModelStatus';
 import SpecIcon from './SpecIcon';
 
 interface ModelSpecItemProps {
@@ -21,7 +22,8 @@ interface ModelSpecItemProps {
 
 export function ModelSpecItem({ spec, isSelected, posInSet, setSize }: ModelSpecItemProps) {
   const localize = useLocalize();
-  const { handleSelectSpec, endpointsConfig, agentsMap } = useModelSelectorContext();
+  const { handleSelectSpec, endpointsConfig, agentsMap, getModelStatus, managerStatusLoading } =
+    useModelSelectorContext();
   const { isFavoriteSpec, toggleFavoriteSpec } = useFavorites();
   const { showIconInMenu = true } = spec;
   const agentAvatarURL = getSpecAgentAvatarURL(spec, agentsMap);
@@ -63,26 +65,31 @@ export function ModelSpecItem({ spec, isSelected, posInSet, setSize }: ModelSpec
           <span className="truncate text-left">{spec.label}</span>
           <SpecDescription description={spec.description} />
         </div>
-      </div>
-      <button
-        type="button"
-        tabIndex={isActive ? 0 : -1}
-        onClick={handleFavoriteClick}
-        aria-label={isFavorite ? localize('com_ui_unpin') : localize('com_ui_pin')}
-        className={cn(
-          'rounded-md p-1 hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring-primary',
-          isFavorite
-            ? 'visible'
-            : // Visible by default so it's tappable on touch (no hover to
-              // reveal it); only hidden-until-hover on hover-capable pointers.
-              // A hover-gated child would otherwise make the whole item
-              // hover-dependent, so the first tap only reveals it and a second
-              // tap is needed to select (the iOS double-tap).
-              'group-focus-within:visible group-hover:visible group-data-[active-item]:visible [@media(hover:hover)]:invisible',
+        {spec.lifecycle === true && (
+          <ModelStatus status={getModelStatus(spec.preset.model)} checking={managerStatusLoading} />
         )}
-      >
-        <MorphIcon icon={isFavorite ? PinOff : Pin} className="h-4 w-4 text-text-secondary" />
-      </button>
+      </div>
+      {spec.lifecycle !== true && (
+        <button
+          type="button"
+          tabIndex={isActive ? 0 : -1}
+          onClick={handleFavoriteClick}
+          aria-label={isFavorite ? localize('com_ui_unpin') : localize('com_ui_pin')}
+          className={cn(
+            'rounded-md p-1 hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring-primary',
+            isFavorite
+              ? 'visible'
+              : // Visible by default so it's tappable on touch (no hover to
+                // reveal it); only hidden-until-hover on hover-capable pointers.
+                // A hover-gated child would otherwise make the whole item
+                // hover-dependent, so the first tap only reveals it and a second
+                // tap is needed to select (the iOS double-tap).
+                'group-focus-within:visible group-hover:visible group-data-[active-item]:visible [@media(hover:hover)]:invisible',
+          )}
+        >
+          <MorphIcon icon={isFavorite ? PinOff : Pin} className="h-4 w-4 text-text-secondary" />
+        </button>
+      )}
       {isSelected && (
         <>
           <CheckCircle2

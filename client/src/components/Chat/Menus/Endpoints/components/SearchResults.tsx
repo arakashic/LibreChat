@@ -10,10 +10,8 @@ import { useModelSelectorContext } from '../ModelSelectorContext';
 import { CustomMenuItem as MenuItem } from '../CustomMenu';
 import VirtualizedModelList from './VirtualizedModelList';
 import { shouldRenderEndpointOption } from '../utils';
-import { cn, getSpecAgentAvatarURL } from '~/utils';
-import SpecDescription from './SpecDescription';
+import { ModelSpecItem } from './ModelSpecItem';
 import { useFavorites } from '~/hooks';
-import SpecIcon from './SpecIcon';
 
 type SearchModel = { name: string; isGlobal?: boolean };
 
@@ -173,8 +171,7 @@ interface SearchResultsProps {
 }
 
 export function SearchResults({ results, localize, searchValue }: SearchResultsProps) {
-  const { selectedValues, handleSelectSpec, handleSelectEndpoint, endpointsConfig, agentsMap } =
-    useModelSelectorContext();
+  const { selectedValues, handleSelectEndpoint } = useModelSelectorContext();
   const { modelSpec: selectedSpec, endpoint: selectedEndpoint } = selectedValues;
   const preparedResults = useMemo(
     () => (results ? prepareSearchResults(results, localize, searchValue) : []),
@@ -218,50 +215,13 @@ export function SearchResults({ results, localize, searchValue }: SearchResultsP
         if (result.kind === 'spec') {
           const { spec } = result;
           return (
-            <MenuItem
+            <ModelSpecItem
               key={spec.name}
-              onClick={() => handleSelectSpec(spec)}
-              aria-selected={selectedSpec === spec.name || undefined}
-              aria-posinset={resultOffset + 1}
-              aria-setsize={listboxSetSize}
-              className={cn(
-                'flex w-full cursor-pointer justify-between rounded-lg px-2 text-sm',
-                spec.description ? 'items-start' : 'items-center',
-              )}
-            >
-              <div
-                className={cn(
-                  'flex w-full min-w-0 gap-2 px-1 py-1',
-                  spec.description ? 'items-start' : 'items-center',
-                )}
-              >
-                {(spec.showIconInMenu ?? true) && (
-                  <div className="flex-shrink-0">
-                    <SpecIcon
-                      currentSpec={spec}
-                      endpointsConfig={endpointsConfig}
-                      agentAvatarURL={getSpecAgentAvatarURL(spec, agentsMap)}
-                    />
-                  </div>
-                )}
-                <div className="flex min-w-0 flex-col gap-1">
-                  <span className="truncate text-left">{spec.label}</span>
-                  <SpecDescription description={spec.description} />
-                </div>
-              </div>
-              {selectedSpec === spec.name && (
-                <>
-                  <CheckCircle2
-                    className={cn(
-                      'size-4 shrink-0 text-text-primary',
-                      spec.description ? 'mt-1' : '',
-                    )}
-                    aria-hidden="true"
-                  />
-                  <VisuallyHidden>{localize('com_a11y_selected')}</VisuallyHidden>
-                </>
-              )}
-            </MenuItem>
+              spec={spec}
+              isSelected={selectedSpec === spec.name}
+              posInSet={resultOffset + 1}
+              setSize={listboxSetSize}
+            />
           );
         }
 

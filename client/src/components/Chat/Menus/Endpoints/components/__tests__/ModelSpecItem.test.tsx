@@ -6,11 +6,14 @@ const mockHandleSelectSpec = jest.fn();
 const mockToggleFavoriteSpec = jest.fn();
 let mockIsFavoriteSpec = false;
 let mockIsActive = false;
+let mockModelStatus: Record<string, unknown> | undefined;
 
 jest.mock('~/components/Chat/Menus/Endpoints/ModelSelectorContext', () => ({
   useModelSelectorContext: () => ({
     handleSelectSpec: mockHandleSelectSpec,
     endpointsConfig: {},
+    getModelStatus: () => mockModelStatus,
+    managerStatusLoading: false,
   }),
 }));
 
@@ -54,6 +57,7 @@ describe('ModelSpecItem', () => {
     jest.clearAllMocks();
     mockIsFavoriteSpec = false;
     mockIsActive = false;
+    mockModelStatus = undefined;
   });
 
   it('renders the spec label and icon', () => {
@@ -121,5 +125,22 @@ describe('ModelSpecItem', () => {
       render(<ModelSpecItem spec={baseSpec} isSelected={false} />);
       expect(screen.getByRole('button', { name: 'com_ui_pin' })).toHaveAttribute('tabindex', '0');
     });
+  });
+
+  it('shows lifecycle status and removes the bypassing pin action', () => {
+    mockModelStatus = {
+      id: 'gpt-5',
+      label: 'GPT-5',
+      pool_id: 'gpu-0',
+      state: 'stopped',
+      detail: 'Stopped',
+      active: false,
+      metadata: {},
+      operation: null,
+    };
+    render(<ModelSpecItem spec={{ ...baseSpec, lifecycle: true }} isSelected={false} />);
+
+    expect(screen.getByText('com_ui_model_status_stopped')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'com_ui_pin' })).not.toBeInTheDocument();
   });
 });

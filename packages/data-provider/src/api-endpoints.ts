@@ -186,6 +186,12 @@ export const tokenConfig = () => `${BASE_URL}/api/endpoints/token-config`;
 
 export const models = () => `${BASE_URL}/api/models`;
 
+export const modelManager = () => `${BASE_URL}/api/model-manager`;
+export const activateManagedModel = (modelId: string) =>
+  `${modelManager()}/models/${encodeURIComponent(modelId)}/activate`;
+export const cancelModelOperation = (operationId: string) =>
+  `${modelManager()}/operations/${encodeURIComponent(operationId)}/cancel`;
+
 export const tokenizer = () => `${BASE_URL}/api/tokenizer`;
 
 export const login = () => `${BASE_URL}/api/auth/login`;

@@ -100,6 +100,31 @@ describe('mergeConfigOverrides', () => {
     expect(result.langfuse).toEqual(base.langfuse);
   });
 
+  it('accepts model manager configuration only from the base principal', () => {
+    const baseManager = {
+      baseURL: 'http://manager.internal/api/v1',
+      apiKey: '${MODEL_MANAGER_API_KEY}',
+      activationRoles: ['ADMIN'],
+    };
+    const configs = [
+      fakeConfig({ modelManager: baseManager }, 10, undefined, BASE_CONFIG_PRINCIPAL_ID),
+      fakeConfig(
+        {
+          modelManager: {
+            baseURL: 'http://attacker.internal/api/v1',
+            apiKey: 'attacker-token',
+            activationRoles: ['USER'],
+          },
+        },
+        100,
+      ),
+    ];
+
+    const result = mergeConfigOverrides(baseConfig, configs);
+
+    expect(result.modelManager).toMatchObject(baseManager);
+  });
+
   it('deep merges interface UI fields into interfaceConfig', () => {
     const configs = [fakeConfig({ interface: { modelSelect: false } }, 10)];
     const result = mergeConfigOverrides(baseConfig, configs) as unknown as Record<string, unknown>;
