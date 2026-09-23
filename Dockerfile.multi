@@ -118,6 +118,12 @@ COPY --from=data-provider-build /app/packages/data-provider/dist ./packages/data
 COPY --from=data-schemas-build /app/packages/data-schemas/dist ./packages/data-schemas/dist
 COPY --from=api-package-build /app/packages/api/dist ./packages/api/dist
 COPY --from=client-build /app/client/dist ./client/dist
+# npm ci --omit=dev may omit local workspace links even though the built
+# workspaces are runtime dependencies. Recreate only the packages copied above.
+RUN mkdir -p /app/node_modules/@librechat && \
+    ln -sfn /app/packages/data-provider /app/node_modules/librechat-data-provider && \
+    ln -sfn /app/packages/data-schemas /app/node_modules/@librechat/data-schemas && \
+    ln -sfn /app/packages/api /app/node_modules/@librechat/api
 # Propagate build metadata into runtime env so /api/config can expose it.
 # Declared here (after the heavy install/copy steps) so that commit/date
 # changing on every CI run does not bust the cache for those layers.
