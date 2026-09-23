@@ -123,7 +123,8 @@ COPY --from=client-build /app/client/dist ./client/dist
 RUN mkdir -p /app/node_modules/@librechat && \
     ln -sfn /app/packages/data-provider /app/node_modules/librechat-data-provider && \
     ln -sfn /app/packages/data-schemas /app/node_modules/@librechat/data-schemas && \
-    ln -sfn /app/packages/api /app/node_modules/@librechat/api
+    ln -sfn /app/packages/api /app/node_modules/@librechat/api && \
+    chmod -R a+rX /app/api /app/client /app/config /app/packages /app/skill
 # Propagate build metadata into runtime env so /api/config can expose it.
 # Declared here (after the heavy install/copy steps) so that commit/date
 # changing on every CI run does not bust the cache for those layers.
